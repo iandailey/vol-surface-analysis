@@ -3,6 +3,8 @@ import pandas as pd
 import numpy as np
 from datetime import datetime
 
+from implied_vol import compute_implied_vol
+
 def fetch_options_chain(ticker, min_dte=7, max_dte=365):
     #create yfinance ticker object
     dat = yf.Ticker(ticker)
@@ -66,8 +68,25 @@ def filter_illiquid(df):
 
     return df
 
+
+def compute_row_iv(row, spot):
+    market_price = (row['bid'] + row['ask']) / 2
+    K = row['strike']
+    T = row['dte']/365
+    r = 0.05
+    option_type = row['type']
+
+    return compute_implied_vol(market_price, spot, K, T, r, option_type)
+
+
+
+
 if __name__ == "__main__":
     df = fetch_options_chain("SPY")
     print(f"Raw data shape: {df.shape}")
     df = filter_illiquid(df)
     print(f"Filtered data shape: {df.shape}")
+    ticker = df['ticker'].iloc[0]
+    spot = yf.Ticker(ticker).info['regularMarketPrice']
+    df['computed_iv'] = df.apply(lambda row: compute_row_iv(row, spot), axis=1)
+    print(df[['strike', 'impliedVolatility', 'computed_iv']].head(10))
