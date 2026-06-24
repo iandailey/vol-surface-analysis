@@ -78,15 +78,23 @@ def compute_row_iv(row, spot):
 
     return compute_implied_vol(market_price, spot, K, T, r, option_type)
 
+def save_data(df, ticker):
 
+    filepath = f"data/{ticker}_options.parquet"
+    df.to_parquet(filepath)
 
+def run_pipeline(tickers=['SPY', 'QQQ', 'AAPL']):
+    if len(tickers) == 0:
+        return 
+
+    for ticker in tickers:
+        df = fetch_options_chain(ticker)
+        df = filter_illiquid(df)
+        spot = yf.Ticker(ticker).info['regularMarketPrice']
+        df['computed_iv'] = df.apply(lambda row: compute_row_iv(row, spot), axis=1)
+        save_data(df, ticker)
+    
+    return "Saved all file successfully"
 
 if __name__ == "__main__":
-    df = fetch_options_chain("SPY")
-    print(f"Raw data shape: {df.shape}")
-    df = filter_illiquid(df)
-    print(f"Filtered data shape: {df.shape}")
-    ticker = df['ticker'].iloc[0]
-    spot = yf.Ticker(ticker).info['regularMarketPrice']
-    df['computed_iv'] = df.apply(lambda row: compute_row_iv(row, spot), axis=1)
-    print(df[['strike', 'impliedVolatility', 'computed_iv']].head(10))
+    run_pipeline()
