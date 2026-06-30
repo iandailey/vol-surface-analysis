@@ -92,6 +92,7 @@ def run_pipeline(tickers=['SPY', 'QQQ', 'AAPL']):
         df = filter_illiquid(df)
         spot = yf.Ticker(ticker).info['regularMarketPrice']
         df['computed_iv'] = df.apply(lambda row: compute_row_iv(row, spot), axis=1)
+        df['spot'] = spot
         save_data(df, ticker)
     
     return "Saved all file successfully"
