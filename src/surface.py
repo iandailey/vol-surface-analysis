@@ -1,6 +1,8 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+from scipy.interpolate import griddata
+import plotly.graph_objects as go
 
 
 df = pd.read_parquet("data/SPY_options.parquet")
@@ -33,8 +35,43 @@ def plot_vol_smile(df, expiry):
     plt.close()
     print("Plot saved to notebooks/vol_smile.png")
 
+def build_surface(df):
+    k = df['log_moneyness']
+    t = df['dte']
+    iv = df['computed_iv']
+
+    k_grid = np.linspace(-0.3, 0.3, 50)
+    t_grid = np.linspace(7, 365, 30)
+
+    K, T = np.meshgrid(k_grid, t_grid)
+
+    grid = griddata((k, t), iv, (K, T), method='cubic')
+
+    #masking out NaN values
+    grid = np.ma.masked_invalid(grid)
+
+    return K, T, grid
+
+def plot_surface_3d(K, T, grid):
+    fig = go.Figure(data=[go.Surface(
+        x=K,
+        y=T,
+        z=grid,
+        colorscale='RdBu'
+    )])
+
+    fig.update_layout(
+        title='SPY Implied Volatility Surface',
+        scene=dict(
+            xaxis_title='Log-Moneyness',
+            yaxis_title='DTE',
+            zaxis_title='Implied Volatility'
+        )
+    )
+    
+    fig.write_html("notebooks/vol_surface_3d.html")
+    print("Saved to notebooks/vol_surface_3d.html")
+
 if __name__ == "__main__":
-    # get the first available expiry
-    expiries = df['expiry'].unique()[:4]
-    for expiry in expiries:
-        plot_vol_smile(df, expiry)
+    K, T, grid = build_surface(df)
+    plot_surface_3d(K, T, grid)
