@@ -72,6 +72,24 @@ def plot_surface_3d(K, T, grid):
     fig.write_html("notebooks/vol_surface_3d.html")
     print("Saved to notebooks/vol_surface_3d.html")
 
+def plot_surface_2d_heatmap(K, T, grid):
+    fig = go.Figure(data=[go.Heatmap(
+        x=K[0],
+        y=T[:, 0],
+        z=grid,
+        colorscale='RdBu'
+    )])
+
+    fig.update_layout(
+        title='SPY Implied Volatility Heatmap',
+        xaxis_title='Log-Moneyness',
+        yaxis_title='DTE'
+    )
+
+    fig.write_html("notebooks/vol_surface_2d.html")
+    print("Saved to notebooks/vol_surface_2d.html")
+
 if __name__ == "__main__":
     K, T, grid = build_surface(df)
     plot_surface_3d(K, T, grid)
+    plot_surface_2d_heatmap(K, T, grid)
